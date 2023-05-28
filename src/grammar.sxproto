@@ -1,0 +1,160 @@
+
+(rule
+  (name "BlankSpaceChar")
+  (((cat))
+   (charset " \n\t\r\v")
+  ))
+
+(rule
+  (name "DigitChar")
+  (((cat)) (charset "0123456789")))
+(rule
+  (name "LowerAlphaChar")
+  (((cat)) (charset "abcdefghijklmnopqrstuvwxyz")))
+(rule
+  (name "UpperAlphaChar")
+  (((cat)) (charset "ABCDEFGHIJKLMNOPQRSTUVWXYZ")))
+(rule
+  (name "AlphaChar")
+  (((or)) (rule "UpperAlphaChar") (rule "LowerAlphaChar")))
+(rule
+  (name "AlnumChar")
+  (((or)) (rule "AlphaChar") (rule "DigitChar")))
+
+(rule
+  (name "LineComment")
+  (((cat))
+   (literal ";")
+   (((maybe)) (((some)) (not_charset "\n")))
+   (literal "\n")
+  ))
+
+(rule
+  (name "Space")
+  (((cat))
+   (((some))
+    (((or))
+     (rule "BlankSpaceChar")
+     (rule "LineComment")
+    ))))
+
+(rule
+  (name "UnquotedFieldName")
+  (((cat))
+   (rule "AlphaChar")
+   (((maybe)) (((some)) (rule "AlphaChar")))
+  ))
+
+(rule
+  (name "QuotedFieldName")
+  (((cat))
+   (literal "\"")
+   (rule "UnquotedFieldName")
+   (literal "\"")
+  ))
+
+(rule
+  (name "NatLiteral")
+  (((cat))
+   (((some)) (rule "DigitChar"))
+  ))
+
+(rule
+  (name "FieldName")
+  (((cat))
+   (((or))
+    (rule "QuotedFieldName")
+    (rule "UnquotedFieldName")
+    (rule "NatLiteral")
+   )))
+
+(rule
+  (name "EmptyMessageFieldContent")
+  (((cat))
+   (((or))
+     (rule "FieldName")
+     (((cat))
+      (literal "(") (((maybe)) (rule "Space"))
+      (rule "FieldName")
+      (((maybe)) (rule "Space")) (literal ")")
+     ))
+   (((maybe)) (rule "Space"))
+  ))
+
+(rule
+  (name "ShorthandMessageFieldContent")
+  (((cat))
+   (rule "FieldName")
+   (((maybe)) (rule "Space"))
+   (((some))
+    (rule "Field")
+    (((maybe)) (rule "Space"))
+   )))
+
+(rule
+  (name "CanonicalMessageFieldContent")
+  (((cat))
+   (literal "(") (((maybe)) (rule "Space"))
+   (rule "FieldName")
+   (((maybe)) (rule "Space")) (literal ")")
+   (((maybe)) (rule "Space"))
+   (((some))
+    (rule "Field")
+    (((maybe)) (rule "Space"))
+   )))
+
+(rule
+  (name "RepeatedFieldContent")
+  (((cat))
+   (literal "(") (((maybe)) (rule "Space"))
+   (rule "FieldName")
+   (((maybe)) (rule "Space")) (literal ")")
+   (((maybe)) (rule "Space"))
+   (((some))
+    (rule "Value")
+    (((maybe)) (rule "Space"))
+   )))
+
+(rule
+  (name "ManyofFieldContent")
+  (((cat))
+   (literal "(") (((maybe)) (rule "Space"))
+   (literal "(") (((maybe)) (rule "Space"))
+   (rule "FieldName")
+   (((maybe)) (rule "Space")) (literal ")")
+   (((maybe)) (rule "Space")) (literal ")")
+   (((maybe)) (rule "Space"))
+   (((maybe))
+    (((some))
+     (((or)) (rule "Field") (rule "Value"))
+     (((maybe)) (rule "Space"))
+    ))
+  ))
+
+(rule
+  (name "Field")
+  (((cat))
+   (literal "(")
+   (((maybe)) (rule "Space"))
+   (((or))
+    (rule "EmptyMessageFieldContent")
+    (rule "ShorthandMessageFieldContent")
+    (rule "CanonicalMessageFieldContent")
+    (rule "RepeatedFieldContent")
+    (rule "ManyofFieldContent")
+   )
+   (((maybe)) (rule "Space"))
+   (literal ")")
+  ))
+
+(rule
+  (name "Main")
+  (((cat))
+   (((maybe)) (rule "Space"))
+   (((maybe))
+    (((some))
+     (rule "Field")
+     (((maybe)) (rule "Space"))
+    ))
+  ))
+
